@@ -17,7 +17,7 @@ L’objectif principal est de mettre en pratique les bases du langage Python, la
 ## Installation
 1. Cloner le dépôt :
 ```bash
-git clone <https://github.com/Armand310888/OC_Project_2.git>
+git clone <git@github.com:Armand310888/OC_Project_2.git>
 ```
 2. Se placer dans le dossier du projet :
 ```bash
