@@ -1,0 +1,10 @@
+# Environnements Python
+.venv/
+__pycache__/
+*.pyc
+
+# Données générées (exigence OpenClassrooms)
+output/
+*.csv
+*.jpg
+*.png
