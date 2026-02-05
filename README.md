@@ -33,12 +33,12 @@ pip install -r requirements.txt
 python src/main.py
 ```
 
-## Structure du projet:
+## Structure du projet
 OC_Project_2
 ├── src
 │   └── main.py
 ├── README.md
 └── requirements.txt
 
-## Auteur:
+## Auteur
 Projet réalisé par Armand de la Porte des Vaux dans le cadre de la formation OpenClassrooms.
