@@ -35,23 +35,68 @@ with open("debug_product.html", "w", encoding="utf-8") as f:
 soup = BeautifulSoup(response_html, "html.parser")
 
 # Extracting the data
-# Helper to retrieve data from product information header
+    # Helper to retrieve data from product information header
 def extract_table_value(soup, label):
     th = soup.find("th", string=label)
     row = th.parent
     return row.find("td").get_text(strip=True)
 
+    # Extracting product_page_url
 product_page_url = response.url
 
+    # Extracting universal_product_code
 universal_product_code = extract_table_value(soup, "UPC")
 
+    # Extracting title
 title = soup.title.string.get_text(strip=True)
 
-price_including_tax = extract_table_value(soup, "Price (incl. tax)")
-
+    # Extracting and cleaning price_including_tax and price_excluding_tax as dictionnaries with values and currencies
+CURRENCIES = ["£", "€", "$"]
+        # Applies to price_including_tax data
+raw_price_including_tax = extract_table_value(soup, "Price (incl. tax)")
+price_including_tax_currency = "Inconnue"
+for currency_symbol in CURRENCIES:
+    if currency_symbol in raw_price_including_tax:
+        price_including_tax_currency = currency_symbol
+        break
+cleaned_price_including_tax = (
+    raw_price_including_tax
+    .replace("Â", "")
+    .replace("£", "")
+    .strip()
+)
+price_including_tax_value = float(cleaned_price_including_tax)
+price_including_tax = {
+    "value" : price_including_tax_value,
+    "currency" : price_including_tax_currency,
+}
+        # Applies to price_excluding_tax data
 price_excluding_tax = extract_table_value(soup, "Price (excl. tax)")
+price_excluding_tax_currency = "Inconnue"
+for currency_symbol in CURRENCIES:
+    if currency_symbol in raw_price_excluding_tax:
+        price_excluding_tax_currency = currency_symbol
+        break
+cleaned_price_excluding_tax = (
+    raw_price_excluding_tax
+    .replace("Â", "")
+    .replace("£", "")
+    .strip()
+)
+price_excluding_tax_value = float(cleaned_price_excluding_tax)
+price_excluding_tax = {
+    "value" : price_excluding_tax_value,
+    "currency" : price_excluding_tax_currency,
+}
 
-number_available = extract_table_value(soup, "Availability")
+    # Extract and clean number_available in order to keep only the value
+raw_number_available = extract_table_value(soup, "Availability")
+digits = []
+for char in raw_number_available:
+    if char.isdigit():
+        digits.append(char)
+cleaned_number_available = "".join(digits)
+number_available = int(cleaned_number_available)
 
 description_header = soup.find("div", id="product_description")
 product_description = description_header.find_next_sibling("p").get_text()
