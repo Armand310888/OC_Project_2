@@ -2,13 +2,13 @@
 ETL script to extract, transform, and load data from "Books to Scrape" website.
 
 The script follows a classic ETL pipeline:
-1. Download HTML content from website
+1. Download HTML content from the website
 2. Parse the HTML structure
 3. Extract relevant data
 4. Transform and clean the extracted data
 5. Save results to a CSV file
 
-The implementation evolves throught multiple phases:
+The implementation evolves through multiple phases:
 - Phase 1: Extract data from a single product page
 - Phase 2: Extract data from all products in a given category
 - Phase 3: Extract data from all available categories (one CSV per category)
@@ -16,3 +16,68 @@ The implementation evolves throught multiple phases:
 
 """
 
+# Third-party libraries for HTTP requests and HTML parsing
+import requests
+from bs4 import BeautifulSoup
+
+# PHASE 1: EXTRACT DATA FROM A SINGLE PRODUCT PAGE
+
+# Retrieving HTML content from product page
+url = "https://books.toscrape.com/catalogue/sharp-objects_997/index.html"
+response = requests.get(url)
+response_html = response.text
+
+# Save raw HTML locally for analysis
+with open("debug_product.html", "w", encoding="utf-8") as f:
+    f.write(response_html)
+
+# Parsing the HTML content
+soup = BeautifulSoup(response_html, "html.parser")
+
+# Extracting the data
+# Helper to retrieve data from product information header
+def extract_table_value(soup, label):
+    th = soup.find("th", string=label)
+    row = th.parent
+    return row.find("td").get_text(strip=True)
+
+product_page_url = response.url
+
+universal_product_code = extract_table_value(soup, "UPC")
+
+title = soup.title.string.get_text(strip=True)
+
+price_including_tax = extract_table_value(soup, "Price (incl. tax)")
+
+price_excluding_tax = extract_table_value(soup, "Price (excl. tax)")
+
+number_available = extract_table_value(soup, "Availability")
+
+description_header = soup.find("div", id="product_description")
+product_description = description_header.find_next_sibling("p").get_text()
+
+ul = soup.find("ul", class_="breadcrumb")
+li_items = ul.find_all("li")
+third_li = li_items[2]
+a = third_li.find("a")
+category = a.get_text(strip=True)
+
+p = soup.find("p", class_="star-rating Four")
+class_content = p["class"]
+review_rating = class_content[1]
+
+div = soup.find("div", class_="item active")
+img = div.find("img")
+image_url = img["src"]
+
+# Extraction control
+print(f"product_page_url : {product_page_url}")
+print(f"universal_product_code : {universal_product_code}")
+print(f"title : {title}")
+print(f"price_including_tax : {price_including_tax}")
+print(f"price_excluding_tax : {price_excluding_tax}")
+print(f"number_available : {number_available}")
+print(f"product_description : {product_description}")
+print(f"category : {category}")
+print(f"review_rating : {review_rating}")
+print(f"image_url : {image_url}")
