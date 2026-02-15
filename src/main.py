@@ -55,8 +55,10 @@ with open("book_data.csv", "w", encoding="utf-8", newline="") as csvfile:
 
     current_page_url = category_url
 
+    has_next_page = True
+
     # Retrieving and parsing every product page from a category. And then extracting, transforming, and loading the data of each product page
-    while True:
+    while has_next_page:
         # Download and parse current page
         category_response = requests.get(current_page_url)
         category_raw_html = category_response.text
@@ -197,9 +199,9 @@ with open("book_data.csv", "w", encoding="utf-8", newline="") as csvfile:
 
         # Find link to next page
         next_page_data = category_parsed_html.find("li", class_="next")
-        if not next_page_data:
-            break
-
-        next_page_index = next_page_data.find("a")["href"]
-        current_page_url = urljoin(current_page_url, next_page_index)
+        if next_page_data:
+            next_page_index = next_page_data.find("a")["href"]
+            current_page_url = urljoin(current_page_url, next_page_index)
+        else:
+            has_next_page = False
 
