@@ -18,7 +18,8 @@ The implementation evolves through multiple phases:
 
 # Third-party libraries for HTTP requests and HTML parsing
 import requests
-from bs4 import Beautifulparsed_html
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 # PHASE 1: EXTRACT DATA FROM A SINGLE PRODUCT PAGE
 
@@ -48,7 +49,8 @@ product_page_url = response.url
 universal_product_code = extract_table_value(parsed_html, "UPC")
 
     # Extracting "title"
-title = parsed_html.title.get_text(strip=True)
+raw_title = parsed_html.title.get_text(strip=True)
+title = raw_title.replace(" | Books to Scrape - Sandbox", "")
 
     # Extracting and cleaning "price_including_tax" and "price_excluding_tax" as dictionnaries with values and currencies
 CURRENCIES = ["£", "€", "$"]
@@ -61,6 +63,7 @@ for currency_symbol in CURRENCIES:
         break
 cleaned_price_including_tax_text = (
     raw_price_including_tax
+    .replace("Â", "")
     .replace("£", "")
     .strip()
 )
@@ -78,6 +81,7 @@ for currency_symbol in CURRENCIES:
         break
 cleaned_price_excluding_tax_text = (
     raw_price_excluding_tax
+    .replace("Â", "")
     .replace("£", "")
     .strip()
 )
@@ -96,22 +100,35 @@ for char in raw_number_available:
 cleaned_number_available = "".join(digits)
 number_available = int(cleaned_number_available)
 
+    # Extract and clean "product_description"
 description_header = parsed_html.find("div", id="product_description")
 product_description = description_header.find_next_sibling("p").get_text()
 
+    # Extract and clean "category"
 ul = parsed_html.find("ul", class_="breadcrumb")
 li_items = ul.find_all("li")
 third_li = li_items[2]
 a = third_li.find("a")
 category = a.get_text(strip=True)
 
-p = parsed_html.find("p", class_="star-rating Four")
+    # Extract and clean "review_rating"
+p = parsed_html.find("p", class_="star-rating")
 class_content = p["class"]
-review_rating = class_content[1]
+review_rating_text = class_content[1]
+review_number_mapping = {
+    "One" : 1, 
+    "Two" : 2, 
+    "Three" : 3, 
+    "Four" : 4, 
+    "Five" : 5
+    }
+review_rating = review_number_mapping.get(review_rating_text)
 
+    # Extract and clean "image_url" 
 div = parsed_html.find("div", class_="item active")
 img = div.find("img")
-image_url = img["src"]
+image_relative_url = img["src"]
+image_url = urljoin(product_page_url, image_relative_url)
 
 # Extraction control
 print(f"product_page_url : {product_page_url}")
