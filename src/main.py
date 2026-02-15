@@ -20,6 +20,7 @@ The implementation evolves through multiple phases:
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+import csv
 
 # PHASE 1: EXTRACT DATA FROM A SINGLE PRODUCT PAGE
 
@@ -141,3 +142,22 @@ print(f"product_description : {product_description}")
 print(f"category : {category}")
 print(f"review_rating : {review_rating}")
 print(f"image_url : {image_url}")
+
+# Loading the data into a CSV file
+book_data = {
+    "product_page_url" : product_page_url,
+    "universal_product_code" : universal_product_code,
+    "title" : title,
+    "price_including_tax" : price_including_tax["value"],
+    "price_excluding_tax" : price_excluding_tax["value"],
+    "number_available" : number_available,
+    "product_description" : product_description,
+    "category" : category,
+    "review_rating" : review_rating,
+    "image_url" : image_url
+}
+
+with open("book_data.csv", "w", encoding="utf-8", newline="") as csvfile:
+    writer = csv.DictWriter(csvfile, fieldnames=book_data.keys())
+    writer.writeheader()
+    writer.writerow(book_data)
