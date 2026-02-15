@@ -15,26 +15,39 @@ The implementation evolves through multiple phases:
 - Phase 4: Download and save product images from each product page
 
 """
+# PHASE 2: EXTRACT DATA FROM ALL PRODUCT IN A GIVEN CATEGORY
 
-# Third-party libraries for HTTP requests and HTML parsing
+# Third-party libraries
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import csv
 
-# PHASE 1: EXTRACT DATA FROM A SINGLE PRODUCT PAGE
+# Retrieving HTML content from a category of products page
+category_url = "https://books.toscrape.com/catalogue/category/books/mystery_3/index.html"
 
-# Retrieving HTML content from product page
-url = "https://books.toscrape.com/catalogue/sharp-objects_997/index.html"
-response = requests.get(url)
-raw_html = response.text
+current_page_url = category_url
+while True:
+    # Download and parse current page
+    response = requests.get(current_page_url)
+    raw_html = response.text
+    parsed_html = BeautifulSoup(raw_html, "html.parser")
 
-# Save raw HTML locally for analysis
-with open("debug_product.html", "w", encoding="utf-8") as file:
-    file.write(raw_html)
+    # Extracting the URL of each product in current page
+    products_blocks =  parsed_html.find_all("article", class_="product_pod")
+    for product_block in products_blocks:
+        data = product_block.find("a")
+        product_relative_url = data["href"]
+        product_url = urljoin(category_url, product_relative_url)
+        print(product_url)
 
-# Parsing the HTML content
-parsed_html = BeautifulSoup(raw_html, "html.parser")
+    # Find link to next page
+    next_page_data = parsed_html.find("li", class_="next")
+    if not next_page_data:
+        break
+
+    next_page_index = next_page_data.find("a")["href"]
+    current_page_url = urljoin(current_page_url, next_page_index)
 
 # Extracting the data
     # Helper to retrieve data from product information header
