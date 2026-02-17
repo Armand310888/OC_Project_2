@@ -35,6 +35,26 @@ def html_parser(url):
     raw_html = response.text
     return BeautifulSoup(raw_html, "html.parser")
 
+# Helper to parse price data: separating currency and value
+def parse_price(raw_price):
+    price_currency = "Inconnue"
+    for currency_symbol in CURRENCIES:
+        if currency_symbol in raw_price:
+            price_currency = currency_symbol
+            break
+    cleaned_price_text = (
+        raw_price
+            .replace("Â", "")
+            .replace("£", "")
+            .strip()
+    )
+    price_value = float(cleaned_price_text)
+    parsed_price = {
+        "value" : price_value,
+        "currency" : price_currency
+    }
+    return parsed_price
+
 # Create a list of currencies
 CURRENCIES = ["£", "€", "$"]
 
@@ -115,46 +135,11 @@ for category_absolute_url in categories_absolute_urls:
             # Extracting and cleaning each "price_including_tax" and "price_excluding_tax" as dictionnaries with values and currencies
                 # Applying to "price_including_tax data"
             raw_price_including_tax = extract_table_value(product_page_parsed, "Price (incl. tax)")
-            price_including_tax_currency = "Inconnue"
-            for currency_symbol in CURRENCIES:
-                if currency_symbol in raw_price_including_tax:
-                    price_including_tax_currency = currency_symbol
-                    break
+            price_including_tax = parse_price(raw_price_including_tax)
 
-            cleaned_price_including_tax_text = (
-            raw_price_including_tax
-                .replace("Â", "")
-                .replace("£", "")
-                .strip()
-            )
-
-            price_including_tax_value = float(cleaned_price_including_tax_text)
-
-            price_including_tax = {
-                "value" : price_including_tax_value,
-                "currency" : price_including_tax_currency,
-            }
                 # Applying to "price_excluding_tax data"
             raw_price_excluding_tax = extract_table_value(product_page_parsed, "Price (excl. tax)")
-            price_excluding_tax_currency = "Inconnue"
-            for currency_symbol in CURRENCIES:
-                if currency_symbol in raw_price_excluding_tax:
-                    price_excluding_tax_currency = currency_symbol
-                    break
-
-            cleaned_price_excluding_tax_text = (
-                raw_price_excluding_tax
-                .replace("Â", "")
-                .replace("£", "")
-                .strip()
-            )
-
-            price_excluding_tax_value = float(cleaned_price_excluding_tax_text)
-
-            price_excluding_tax = {
-                "value" : price_excluding_tax_value,
-                "currency" : price_excluding_tax_currency,
-            }
+            price_excluding_tax = parse_price(raw_price_excluding_tax)
 
             # Extract and clean each "number_available" in order to keep only the value
             raw_number_available = extract_table_value(product_page_parsed, "Availability")
