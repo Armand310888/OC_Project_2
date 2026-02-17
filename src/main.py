@@ -71,6 +71,7 @@ fieldnames = [
     "category",
     "review_rating",
     "image_url",
+    "image_local_path",
 ]
 
 # Create outpur folders
@@ -171,7 +172,7 @@ for category_absolute_url in categories_absolute_urls:
             else:
                 product_description = ""
 
-            # Extract and clean each "category"
+            # Extract and clean each "category" name
             ul = product_page_parsed.find("ul", class_="breadcrumb")
             li_items = ul.find_all("li")
             third_li = li_items[2]
@@ -195,7 +196,22 @@ for category_absolute_url in categories_absolute_urls:
             div = product_page_parsed.find("div", class_="item active")
             img = div.find("img")
             image_relative_url = img["src"]
-            image_url = urljoin(product_page_url, image_relative_url)
+            image_absolute_url = urljoin(product_page_url, image_relative_url)
+            image_url = image_absolute_url
+
+            # Download images on local folder ouput/images
+            image_filename = f"{universal_product_code}.jpg"
+            image_path = images_folder / image_filename
+
+            response_image_url = requests.get(image_absolute_url, stream=True, timeout=30)
+            response_image_url.raise_for_status() 
+
+            with open(image_path, "wb") as file:
+                for chunk in response_image_url.iter_content(8192):
+                    if chunk:
+                        file.write(chunk)
+
+            image_path_for_csv = f"images/{image_filename}"
 
             # Build one row and write it immediately
             book_data = {
@@ -209,6 +225,7 @@ for category_absolute_url in categories_absolute_urls:
                 "category": category,
                 "review_rating": review_rating,
                 "image_url": image_url,
+                "image_local_path" : image_path_for_csv
             }
             writer.writerow(book_data)
 
