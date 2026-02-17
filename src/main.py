@@ -22,6 +22,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import csv
+from pathlib import Path
 
 # Helper to retrieve data from product information header
 def extract_table_value(product_parsed_html, label):
@@ -72,6 +73,14 @@ fieldnames = [
     "image_url",
 ]
 
+# Create outpur folders
+output_folder = Path("ouput")
+data_folder = output_folder / "data"
+images_folder = output_folder / "images"
+
+data_folder.mkdir(parents=True, exist_ok=True)
+images_folder.mkdir(parents=True, exist_ok=True)
+
 # Dowload and parse "Books to Scrape" website homepage
 homepage_url = "https://books.toscrape.com/"
 homepage_parsed = html_parser(homepage_url)
@@ -106,8 +115,8 @@ for category_absolute_url in categories_absolute_urls:
     )
 
     # Create a specific csv file per catgeory
-    csv_name = f"{category_name}.csv"
-    file = open(csv_name, "w", encoding="utf-8", newline="")
+    csv_path = data_folder / f"{category_name}.csv"
+    file = open(csv_path, "w", encoding="utf-8", newline="")
     writer = csv.DictWriter(file, fieldnames=fieldnames)
     writer.writeheader()
 
