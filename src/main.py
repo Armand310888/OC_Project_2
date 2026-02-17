@@ -71,6 +71,9 @@ for a in categories_content:
         continue
     categories_absolute_urls.append(urljoin(homepage_url, href))
 
+# Setting an initial number of exported books, for later control
+total_books = 0
+
 # Download and parse every category page
 for category_absolute_url in categories_absolute_urls:
     category_parsed = html_parser(category_absolute_url)
@@ -215,6 +218,10 @@ for category_absolute_url in categories_absolute_urls:
             }
             writer.writerow(book_data)
 
+            # Adding 1 to the number of exported books after each iteration
+            total_books += 1
+
+
         # Find link to next page
         next_page_data = category_parsed.find("li", class_="next")
         if next_page_data:
@@ -226,3 +233,6 @@ for category_absolute_url in categories_absolute_urls:
 
     # CLosing the csv file for a category
     file.close()
+
+# Controlling the total number of exported books
+print(f"Total number of exported books: {total_books}")
