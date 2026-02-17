@@ -169,7 +169,7 @@ for category_absolute_url in categories_absolute_urls:
                 else:
                     product_description = ""
             else:
-                product_content = ""
+                product_description = ""
 
             # Extract and clean each "category"
             ul = product_page_parsed.find("ul", class_="breadcrumb")
