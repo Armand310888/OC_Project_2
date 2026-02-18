@@ -227,10 +227,6 @@ for category in category_index:
                         image_path_for_csv = "none"
                         image_path.unlink(missing_ok=True)
 
-                    # Adding 1 to the number of exported images for later control
-                    total_images += 1
-                    image_download_status = "successful"
-
                 except requests.exceptions.RequestException as exception_type:
                     print(f"Erreur téléchargement image : {exception_type}")
                     image_download_status = "failed"  
