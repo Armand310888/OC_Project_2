@@ -43,6 +43,7 @@ Le script affiche un décompte des lignes produits et des images exportées, pou
 - parallélisation des téléchargements d'images
 - ajout de tests unitaires
 - mise en place de logs structurés
+- intégrer des docstrings dans le script, associé à des fonctions par exemple.
 
 ## Prérequis
 - Python 3.x
