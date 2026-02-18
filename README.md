@@ -51,7 +51,7 @@ Le script affiche un décompte des lignes produits et des images exportées, pou
 ## Installation
 1. Cloner le dépôt :
 ```bash
-git clone <git@github.com:Armand310888/OC_Project_2.git>
+git clone <https://github.com/Armand310888/OC_Project_2.git>
 ```
 2. Se placer dans le dossier du projet :
 ```sh
