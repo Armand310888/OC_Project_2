@@ -52,7 +52,7 @@ def html_parser(url, timeout=30):
     
     except requests.exceptions.RequestException as exception_type:
         print(f"Connexion error: {exception_type}")
-        return Noneq
+        return None
 
 # Helper to parse: "price", by separating currency and value
 def parse_price(raw_price):
