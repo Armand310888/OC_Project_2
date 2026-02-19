@@ -36,11 +36,17 @@ def extract_table_value(product_parsed_html, label):
     return data_cell
 
 # Helper to retrieve and parse HTML content from URL
-def html_parser(url):
-    response = requests.get(url)
-    raw_html = response.text
-    parsed_html = BeautifulSoup(raw_html, "html.parser")
-    return parsed_html
+def html_parser(url, timeout=30):
+    try:
+        response = requests.get(url, timeout=timeout)
+        response.raise_for_status()
+        raw_html = response.text
+        parsed_html = BeautifulSoup(raw_html, "html.parser")
+        return parsed_html
+    
+    except requests.exceptions.RequestException as exception_type:
+        print(f"Connexion error: {exception_type}")
+        return Noneq
 
 # Helper to parse: "price", by separating currency and value
 def parse_price(raw_price):
@@ -234,6 +240,9 @@ for category in category_index:
 
                 # Download and parse product page
                 product_page_soup = html_parser(product_absolute_url)
+
+                if product_page_soup is None:
+                    continue
                 
                 # Extract "product_page_url"
                 product_page_url = product_absolute_url
