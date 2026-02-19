@@ -58,7 +58,7 @@ def parse_price(raw_price):
     cleaned_price_text = (
         raw_price
             .replace("Â", "")
-            .replace("£", "")
+            .replace(price_currency, "")
             .strip()
     )
     price_value = float(cleaned_price_text)
