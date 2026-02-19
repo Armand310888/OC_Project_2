@@ -188,6 +188,8 @@ fieldnames = [
 ]
 
 # MAIN EXECUTION
+print(f"Main execution has started")
+
 # Create output folders for CSV files (data folder) and images files (images folder)
 output_folder = Path("output")
 data_folder = output_folder / "data"
