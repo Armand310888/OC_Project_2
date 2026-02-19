@@ -77,6 +77,95 @@ def extract_and_clean_rating(product_page_soup):
     review_rating = rating_mapping.get(rating_text)
     return review_rating
 
+# Helper to extract and clean: "image_url"
+def extract_and_clean_image_url(product_page_soup, product_page_url):
+    image_container = product_page_soup.find("div", class_="item active")
+    image_tag = image_container.find("img")
+    image_relative_url = image_tag["src"]
+    image_absolute_url = urljoin(product_page_url, image_relative_url)
+    image_url = image_absolute_url
+    return image_url
+
+# Helper to extract and clean (and handle missing case): "product_description"
+def extract_and_clean_product_description(product_page_soup):
+    description_container = product_page_soup.find("div", id="product_description")
+
+    if description_container:
+        description_paragraph = description_container.find_next_sibling("p")
+        if description_paragraph:
+            product_description = description_paragraph.get_text(strip=True)
+    else:
+        product_description = ""
+    return product_description
+
+# Helper to extract and clean: "number_available"
+def extract_and_clean_number_available(product_page_soup):
+    raw_number_available = extract_table_value(product_page_soup, "Availability")
+    digits = []
+    for char in raw_number_available:
+        if char.isdigit():
+            digits.append(char)
+    number_available_str = "".join(digits)
+    number_available = int(number_available_str)
+    return number_available
+
+# Helper to download and validate image
+def download_and_validate_images(universal_product_code, image_absolute_url):
+    image_filename = f"{universal_product_code}.jpg"
+    image_path = images_folder / image_filename
+    image_error = ""
+    image_download_status = "pending"
+    image_path_for_csv = f"images/{image_filename}"
+
+    try:
+        response_image_url = requests.get(image_absolute_url, stream=True, timeout=30)
+        response_image_url.raise_for_status()
+        
+        with open(image_path, "wb") as file:
+            for chunk in response_image_url.iter_content(8192):
+                if chunk:
+                    file.write(chunk)
+        
+        # Validation
+        try: 
+            with Image.open(image_path) as image:
+                image.load()
+            image_download_status = "successful"
+        except Exception:
+            image_download_status = "failed"
+            image_error = "Downloaded file is not a valid image"
+            image_path_for_csv = "none"
+            image_path.unlink(missing_ok=True)
+
+    except requests.exceptions.RequestException as exception_type:
+        print(f"Erreur téléchargement image : {exception_type}")
+        image_download_status = "failed"  
+        image_error = type(exception_type).__name__       
+        image_path_for_csv = "none"
+        
+    return (
+        image_error,
+        image_download_status,
+        image_path_for_csv,
+    )
+
+# Helper to extract and clean categories name and url into a list of dictionnaries
+def extract_and_clean_categories(homepage_soup):
+    categories_sidebar = homepage_soup.find("div", class_="side_categories")
+    category_links = categories_sidebar.find_all("a")
+
+    category_index = []
+    for link in category_links:
+        name = link.get_text(strip=True)
+        href = link.get("href")
+        if name == "Books":
+            continue
+        category_index.append({
+            "name": name,
+            "url": urljoin(homepage_url, href)
+        })
+    return category_index
+
 # CONSTANTS
 # Create a list of currencies
 CURRENCIES = ["£", "€", "$"]
@@ -112,19 +201,7 @@ homepage_url = "https://books.toscrape.com/"
 homepage_soup = html_parser(homepage_url)
 
 # Extract and clean categories absolute URLs and names
-categories_sidebar = homepage_soup.find("div", class_="side_categories")
-category_links = categories_sidebar.find_all("a")
-
-category_index = []
-for link in category_links:
-    name = link.get_text(strip=True)
-    href = link.get("href")
-    if name == "Books":
-        continue
-    category_index.append({
-        "name": name,
-        "url": urljoin(homepage_url, href)
-    })
+category_index = extract_and_clean_categories(homepage_soup)
 
 # Set an initial number of exported books and images, for later control
 total_books = 0
@@ -174,69 +251,24 @@ for category in category_index:
                 price_excluding_tax = parse_price(raw_price_excluding_tax)
 
                 # Extract and clean "number_available"
-                raw_number_available = extract_table_value(product_page_soup, "Availability")
-                digits = []
-                for char in raw_number_available:
-                    if char.isdigit():
-                        digits.append(char)
-                number_available_str = "".join(digits)
-                number_available = int(number_available_str)
+                number_available = extract_and_clean_number_available(product_page_soup)
 
-                # Extract and clean "product_description"
-                description_container = product_page_soup.find("div", id="product_description")
-
-                if description_container:
-                    description_paragraph = description_container.find_next_sibling("p")
-                    if description_paragraph:
-                        product_description = description_paragraph.get_text(strip=True)
-                    else:
-                        product_description = ""
-                else:
-                    product_description = ""
+                # Extract and clean "product_description", handling missing case
+                product_description = ""
+                product_description = extract_and_clean_product_description(product_page_soup)
 
                 # Extract and clean each "review_rating"
                 review_rating = extract_and_clean_rating(product_page_soup)
 
                 # Extract and clean "image_url" 
-                image_container = product_page_soup.find("div", class_="item active")
-                image_tag = image_container.find("img")
-                image_relative_url = image_tag["src"]
-                image_absolute_url = urljoin(product_page_url, image_relative_url)
+                image_absolute_url = extract_and_clean_image_url(product_page_soup, product_page_url)
                 image_url = image_absolute_url
 
-                # Download images on local folder ouput/images
-                image_filename = f"{universal_product_code}.jpg"
-                image_path = images_folder / image_filename
-                image_error = ""
-                image_download_status = "pending"
-                image_path_for_csv = f"images/{image_filename}"
+                # Download images on local folder ouput/images, and update downloaded images counter
+                image_error, image_download_status, image_path_for_csv = download_and_validate_images(universal_product_code, image_absolute_url)
 
-                try:
-                    response_image_url = requests.get(image_absolute_url, stream=True, timeout=30)
-                    response_image_url.raise_for_status()
-                    
-                    with open(image_path, "wb") as file:
-                        for chunk in response_image_url.iter_content(8192):
-                            if chunk:
-                                file.write(chunk)
-                    
-                    # Validation
-                    try: 
-                        with Image.open(image_path) as image:
-                            image.load()
-                        image_download_status = "successful"
-                        total_images += 1
-                    except Exception:
-                        image_download_status = "failed"
-                        image_error = "Downloaded file is not a valid image"
-                        image_path_for_csv = "none"
-                        image_path.unlink(missing_ok=True)
-
-                except requests.exceptions.RequestException as exception_type:
-                    print(f"Erreur téléchargement image : {exception_type}")
-                    image_download_status = "failed"  
-                    image_error = type(exception_type).__name__       
-                    image_path_for_csv = "none"
+                if image_download_status == "successful":
+                    total_images += 1
 
                 # Build one row and write it immediately
                 book_data = {
