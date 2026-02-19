@@ -29,11 +29,17 @@ from PIL import Image
 
 # HELPERS
 # Helper to retrieve data from product information header
-def extract_table_value(product_parsed_html, label):
+def extract_table_value(product_parsed_html, label, url=""):
     header_cell = product_parsed_html.find("th", string=label)
+    if header_cell is None:
+        print(f"Missing '{label}' for {url}")
+        return ""
     row = header_cell.parent
-    data_cell = row.find("td").get_text(strip=True)
-    return data_cell
+    td_cell = row.find("td")
+    if td_cell is None:
+        print(f"Missing data_cell for {url}")
+        return ""
+    return td_cell.get_text(strip=True)
 
 # Helper to retrieve and parse HTML content from URL
 def html_parser(url, timeout=30):
