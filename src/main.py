@@ -151,7 +151,7 @@ for category in category_index:
                 raw_title = product_page_soup.title.get_text(strip=True)
                 title = raw_title.replace(" | Books to Scrape - Sandbox", "")
 
-                # Extract and normalize price (value + currency) for inclincluding and excluding tax
+                # Extract and normalize price (value + currency) for including and excluding tax
                 raw_price_including_tax = extract_table_value(product_page_soup, "Price (incl. tax)")
                 price_including_tax = parse_price(raw_price_including_tax)
 
@@ -192,7 +192,7 @@ for category in category_index:
                 }
                 review_rating = rating_mapping.get(rating_text)
 
-                # Extract and clean each "image_url" 
+                # Extract and clean "image_url" 
                 image_container = product_page_soup.find("div", class_="item active")
                 image_tag = image_container.find("img")
                 image_relative_url = image_tag["src"]
@@ -252,7 +252,7 @@ for category in category_index:
                 
                 writer.writerow(book_data)
 
-                # Adding 1 to the number of exported books for later control
+                # Add 1 to the number of exported books for later control
                 total_books += 1
 
             # Find link to next page
@@ -264,7 +264,7 @@ for category in category_index:
             else:
                 has_next_page = False
 
-        # CLosing the csv file for a category
+        # Close the csv file for a category
         csv_file.close()
 
 # Controlling the total number of exported books and images

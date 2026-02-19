@@ -37,7 +37,7 @@ Le script affiche un décompte des lignes produits et des images exportées, pou
 - Utilisation de BeautifullSoup pour le parsing HTML
 - Utilisation de Pillow pour la validation d'intégrité des images
 
-## Améliorations possible:
+## Améliorations possibles:
 - gestion des exception
 - robustesse en termes de ciblage des balises HTML (en cas de modification du code HTML)
 - parallélisation des téléchargements d'images
@@ -69,11 +69,13 @@ python src/main.py
 ```
 
 ## Structure du projet
+```sh
 OC_Project_2
 ├── src
 │   └── main.py
 ├── README.md
 └── requirements.txt
+```
 
 ## Auteur
 Projet réalisé par Armand de la Porte des Vaux dans le cadre de la formation OpenClassrooms.
