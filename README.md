@@ -46,12 +46,12 @@ Le script affiche un décompte des lignes produits et des images exportées, pou
 - intégrer des docstrings dans le script, associé à des fonctions par exemple.
 
 ## Prérequis
-- Python 3.x
+- Python 3.x > Python 3.7
 - Les dépendances listées dans `requirements.txt`
 
 ## Installation
 1. Cloner le dépôt :
-```bash
+```sh
 git clone <https://github.com/Armand310888/OC_Project_2.git>
 ```
 2. Se placer dans le dossier du projet :
