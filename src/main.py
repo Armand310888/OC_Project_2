@@ -100,6 +100,8 @@ def extract_and_clean_product_description(product_page_soup):
         description_paragraph = description_container.find_next_sibling("p")
         if description_paragraph:
             product_description = description_paragraph.get_text(strip=True)
+        else:
+            product_description = ""
     else:
         product_description = ""
     return product_description
