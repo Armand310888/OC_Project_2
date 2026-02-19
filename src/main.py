@@ -62,6 +62,21 @@ def parse_price(raw_price):
     }
     return parsed_price
 
+# Helper to extract and transform review-rating:
+def extract_and_clean_rating(product_page_soup):
+    rating_tag = product_page_soup.find("p", class_="star-rating")
+    rating_tag_classes = rating_tag["class"]
+    rating_text = rating_tag_classes[1]
+    rating_mapping = {
+        "One" : 1, 
+        "Two" : 2, 
+        "Three" : 3, 
+        "Four" : 4, 
+        "Five" : 5
+    }
+    review_rating = rating_mapping.get(rating_text)
+    return review_rating
+
 # CONSTANTS
 # Create a list of currencies
 CURRENCIES = ["£", "€", "$"]
@@ -180,17 +195,7 @@ for category in category_index:
                     product_description = ""
 
                 # Extract and clean each "review_rating"
-                rating_tag = product_page_soup.find("p", class_="star-rating")
-                rating_tag_classes = rating_tag["class"]
-                rating_text = rating_tag_classes[1]
-                rating_mapping = {
-                    "One" : 1, 
-                    "Two" : 2, 
-                    "Three" : 3, 
-                    "Four" : 4, 
-                    "Five" : 5
-                }
-                review_rating = rating_mapping.get(rating_text)
+                review_rating = extract_and_clean_rating(product_page_soup)
 
                 # Extract and clean "image_url" 
                 image_container = product_page_soup.find("div", class_="item active")
