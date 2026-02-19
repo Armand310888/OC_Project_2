@@ -260,17 +260,17 @@ for category in category_index:
                 product_page_url = product_absolute_url
 
                 # Extract "universal_product_code"
-                universal_product_code = extract_table_value(product_page_soup, "UPC")
+                universal_product_code = extract_table_value(product_page_soup, "UPC", product_page_url)
 
                 # Extract and clean "title"
                 raw_title = product_page_soup.title.get_text(strip=True)
                 title = raw_title.replace(" | Books to Scrape - Sandbox", "")
 
                 # Extract and normalize price (value + currency) for including and excluding tax
-                raw_price_including_tax = extract_table_value(product_page_soup, "Price (incl. tax)")
+                raw_price_including_tax = extract_table_value(product_page_soup, "Price (incl. tax)", product_page_url)
                 price_including_tax = parse_price(raw_price_including_tax)
 
-                raw_price_excluding_tax = extract_table_value(product_page_soup, "Price (excl. tax)")
+                raw_price_excluding_tax = extract_table_value(product_page_soup, "Price (excl. tax)", product_page_url)
                 price_excluding_tax = parse_price(raw_price_excluding_tax)
 
                 # Extract and clean "number_available"
