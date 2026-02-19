@@ -215,6 +215,8 @@ images_folder.mkdir(parents=True, exist_ok=True)
 # Download and parse "Books to Scrape" website homepage
 homepage_url = "https://books.toscrape.com/"
 homepage_soup = html_parser(homepage_url)
+if homepage_soup is None:
+    raise SystemExit("Failed to fetch homepage")
 
 # Extract and clean categories absolute URLs and names
 category_index = extract_and_clean_categories(homepage_soup)
@@ -227,6 +229,8 @@ total_images = 0
 for category in category_index:
     category_absolute_url = category["url"]
     category_soup = html_parser(category_absolute_url)
+    if category_soup is None:
+        raise SystemExit(f"Failed to fetch category: {category["name"]}")
 
     # Extract category name
     category_name = category["name"]
