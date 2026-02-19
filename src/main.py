@@ -42,7 +42,7 @@ def html_parser(url):
     parsed_html = BeautifulSoup(raw_html, "html.parser")
     return parsed_html
 
-# Helper to parse price data: separating currency and value
+# Helper to parse: "price", by separating currency and value
 def parse_price(raw_price):
     price_currency = "Inconnue"
     for currency_symbol in CURRENCIES:
@@ -62,7 +62,7 @@ def parse_price(raw_price):
     }
     return parsed_price
 
-# Helper to extract and transform review-rating:
+# Helper to extract and clean: "review_rating"
 def extract_and_clean_rating(product_page_soup):
     rating_tag = product_page_soup.find("p", class_="star-rating")
     rating_tag_classes = rating_tag["class"]
@@ -257,7 +257,7 @@ for category in category_index:
                 
                 writer.writerow(book_data)
 
-                # Add 1 to the number of exported books for later control
+                # Update exported books counter
                 total_books += 1
 
             # Find link to next page
