@@ -32,7 +32,7 @@ from PIL import Image
 def extract_table_value(product_parsed_html, label, url=""):
     header_cell = product_parsed_html.find("th", string=label)
     if header_cell is None:
-        print(f"Missing '{label}' for {url}")
+        print(f"Missing '{label}' in header_cell for {url}")
         return ""
     row = header_cell.parent
     td_cell = row.find("td")
