@@ -124,14 +124,14 @@ def extract_and_clean_product_description(product_page_soup):
         if description_paragraph:
             product_description = description_paragraph.get_text(strip=True)
         else:
-            logger.info(
+            logger.error(
                 f"Book: '{title}'\n"
                 f"Error: No available product description for this book\n" 
                 f"Corresponding URL: {product_absolute_url}"
             )
             product_description = "No available product description for this book"
     else:
-        logger.info(
+        logger.error(
             f"Book: '{title}'\n"
             f"Error: No available product description for this book\n" 
             f"Corresponding URL: {product_absolute_url}"
