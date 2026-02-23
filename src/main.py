@@ -67,7 +67,7 @@ def html_parser(url, timeout=30):
 
 # Helper to parse: "price", by separating currency and value
 def parse_price(raw_price):
-    price_currency = "Inconnue"
+    price_currency = "Unknowned"
     if raw_price is None:
         return None
     
