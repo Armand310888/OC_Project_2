@@ -26,19 +26,20 @@ from urllib.parse import urljoin
 import csv
 from pathlib import Path
 from PIL import Image
+import logging
 
 # HELPERS
 # Helper to retrieve data from product information header
 def extract_table_value(product_parsed_html, label, url=""):
     header_cell = product_parsed_html.find("th", string=label)
     if header_cell is None:
-        print(f"Missing '{label}' in header_cell for {url}")
-        return ""
+        logger.error(f"Missing '{label}' in header_cell for {url}")
+        return None
     row = header_cell.parent
     td_cell = row.find("td")
     if td_cell is None:
-        print(f"Missing data_cell for {url}")
-        return ""
+        logger.error(f"{label}: missing data_cell -> {url}")
+        return None
     return td_cell.get_text(strip=True)
 
 # Helper to retrieve and parse HTML content from URL
@@ -51,12 +52,15 @@ def html_parser(url, timeout=30):
         return parsed_html
     
     except requests.exceptions.RequestException as exception_type:
-        print(f"Connexion error: {exception_type}")
+        logger.error(f"Connexion error: {exception_type}")
         return None
 
 # Helper to parse: "price", by separating currency and value
 def parse_price(raw_price):
     price_currency = "Inconnue"
+    if raw_price is None:
+        return None
+    
     for currency_symbol in CURRENCIES:
         if currency_symbol in raw_price:
             price_currency = currency_symbol
@@ -67,6 +71,10 @@ def parse_price(raw_price):
             .replace(price_currency, "")
             .strip()
     )
+
+    if cleaned_price_text == "":
+        return None
+    
     price_value = float(cleaned_price_text)
     parsed_price = {
         "value" : price_value,
@@ -87,6 +95,11 @@ def extract_and_clean_rating(product_page_soup):
         "Five" : 5
     }
     review_rating = rating_mapping.get(rating_text)
+
+    if review_rating == "":
+        logger.error(f"Book '{title}' : failed to extract review_rating data. Corresponding URL: {product_absolute_url}")
+        return None
+    
     return review_rating
 
 # Helper to extract and clean: "image_url"
@@ -107,9 +120,11 @@ def extract_and_clean_product_description(product_page_soup):
         if description_paragraph:
             product_description = description_paragraph.get_text(strip=True)
         else:
-            product_description = ""
+            logger.info(f"No available product description for this book: '{title}'. Corresponding URL: {product_absolute_url}")
+            product_description = "No available product description for this book"
     else:
-        product_description = ""
+        logger.info(f"No available product description for this book: '{title}'. Corresponding URL: {product_absolute_url}")
+        product_description = "No available product description for this book"
     return product_description
 
 # Helper to extract and clean: "number_available"
@@ -120,6 +135,11 @@ def extract_and_clean_number_available(product_page_soup):
         if char.isdigit():
             digits.append(char)
     number_available_str = "".join(digits)
+
+    if number_available_str == "":
+        logger.error(f"Book '{title}': failed to extract availability data. Corresponding URL: {product_absolute_url}")
+        return None
+    
     number_available = int(number_available_str)
     return number_available
 
@@ -146,13 +166,14 @@ def download_and_validate_images(universal_product_code, image_absolute_url):
                 image.load()
             image_download_status = "successful"
         except Exception:
+            logger.error(f"Book {title}: downloaded file is not a valid image. Corresponding URL: {product_absolute_url}")
             image_download_status = "failed"
             image_error = "Downloaded file is not a valid image"
             image_path_for_csv = "none"
             image_path.unlink(missing_ok=True)
 
     except requests.exceptions.RequestException as exception_type:
-        print(f"Erreur téléchargement image : {exception_type}")
+        logger.error(f"Book {title}: download image error: {exception_type}. Corresponding URL: {product_absolute_url}")
         image_download_status = "failed"  
         image_error = type(exception_type).__name__       
         image_path_for_csv = "none"
@@ -180,6 +201,36 @@ def extract_and_clean_categories(homepage_soup):
         })
     return category_index
 
+# Helper to setup a logger
+def setup_logger(__name__):
+    # Create a logger to track bugs and facilitaire debug
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+
+    # Create terminal log handler
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+
+    # Create logs folder
+    logs_folder = output_folder / "logs"
+    logs_folder.mkdir(parents=True, exist_ok=True)
+
+    # Create file log handler
+    file_handler = logging.FileHandler(logs_folder / "etl.log", encoding="utf-8")
+    file_handler.setLevel(logging.DEBUG)
+
+    # Define formatting
+    formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+                                
+    # Link formatting to handlers
+    console_handler.setFormatter(formatter)
+    file_handler.setFormatter(formatter)
+
+    # Link handlers to logger
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+    return logger
+
 # CONSTANTS
 # Create a list of currencies
 CURRENCIES = ["£", "€", "$"]
@@ -201,11 +252,14 @@ fieldnames = [
     "image_error"
 ]
 
-# MAIN EXECUTION
-print(f"Main execution has started")
-
-# Create output folders for CSV files (data folder) and images files (images folder)
+# create ouput folder for logger and CSV files and images
 output_folder = Path("output")
+
+# MAIN EXECUTION
+# Create a logger for later debug
+logger = setup_logger(__name__)
+
+# Create data folder and images folder
 data_folder = output_folder / "data"
 images_folder = output_folder / "images"
 
@@ -216,7 +270,11 @@ images_folder.mkdir(parents=True, exist_ok=True)
 homepage_url = "https://books.toscrape.com/"
 homepage_soup = html_parser(homepage_url)
 if homepage_soup is None:
-    raise SystemExit("Failed to fetch homepage")
+    logger.critical(f"ETL crashed: Failed to fetch homepage")
+    raise SystemExit(1)
+
+# Inform log that main has started
+logger.info(f"Main execution has started")
 
 # Extract and clean categories absolute URLs and names
 category_index = extract_and_clean_categories(homepage_soup)
@@ -230,7 +288,8 @@ for category in category_index:
     category_absolute_url = category["url"]
     category_soup = html_parser(category_absolute_url)
     if category_soup is None:
-        raise SystemExit(f"Failed to fetch category: {category["name"]}")
+        logger.critical(f"ETL crashed: failed to fetch category: {category['name']}")
+        raise SystemExit(1)
 
     # Extract category name
     category_name = category["name"]
@@ -254,24 +313,36 @@ for category in category_index:
                 product_page_soup = html_parser(product_absolute_url)
 
                 if product_page_soup is None:
+                    logger.error(f"Missing product page for URL: {product_absolute_url}")
                     continue
                 
                 # Extract "product_page_url"
                 product_page_url = product_absolute_url
 
-                # Extract "universal_product_code"
-                universal_product_code = extract_table_value(product_page_soup, "UPC", product_page_url)
-
                 # Extract and clean "title"
                 raw_title = product_page_soup.title.get_text(strip=True)
                 title = raw_title.replace(" | Books to Scrape - Sandbox", "")
 
+                # Extract "universal_product_code"
+                universal_product_code = extract_table_value(product_page_soup, "UPC", product_page_url)
+                
+                if universal_product_code is None:
+                    logger.error(f"Book '{title}': failed to extract 'UPC' data. Corresponding URL: {product_absolute_url}")
+            
                 # Extract and normalize price (value + currency) for including and excluding tax
                 raw_price_including_tax = extract_table_value(product_page_soup, "Price (incl. tax)", product_page_url)
                 price_including_tax = parse_price(raw_price_including_tax)
 
+                if raw_price_including_tax is None:
+                    logger.error(f"Book '{title}': failed to extract 'Price (incl. tax)' data. Corresponding URL: {product_absolute_url}")
+                    continue
+
                 raw_price_excluding_tax = extract_table_value(product_page_soup, "Price (excl. tax)", product_page_url)
                 price_excluding_tax = parse_price(raw_price_excluding_tax)
+
+                if raw_price_excluding_tax is None:
+                    logger.error(f"Book '{title}': failed to extract 'Price (excl. tax)' data. Corresponding URL: {product_absolute_url}")
+                    continue
 
                 # Extract and clean "number_available"
                 number_available = extract_and_clean_number_available(product_page_soup)
@@ -328,5 +399,6 @@ for category in category_index:
         csv_file.close()
 
 # Controlling the total number of exported books and images
-print(f"Total number of exported books: {total_books}")
-print(f"Total number of exported images: {total_images}")
+logger.info(f"Total number of exported books: {total_books}")
+logger.info(f"Total number of exported images: {total_images}")
+logger.info(f"Main execution has ended")
