@@ -14,11 +14,11 @@ L’objectif principal est de mettre en pratique les bases:
 - de l’utilisation de Git et GitHub.
 
 ## Fonctionnalités:
-- Extraction des données pour toutes les catégories de produits
+- Extraction des données pour tous les produits de toutes les catégories
 - Génération d'un fichier CSV par catégorie, avec les données requises dans l'énoncé
 - Téléchargement des images produits
 - Validation de l'intégrité des images téléchargées via Pillow
-- Journalisation des erreurs dans le CSV et dans un fichier log
+- Gestion des erreurs et journalisation dans le CSV et dans un fichier log
 
 ## Résultats générés:
 - output/data/ : fichiers CSV par catégorie
@@ -30,26 +30,24 @@ Le script est conçu pour continuer son exécution même:
 - en cas d'échec de téléchargement d'image. Les erreurs sont journalisées via le module logging (dans un fichier et sur la console) et dans le CSV  via les colonnes:
     - image_download_status
     - image_error
-- en cas d'impossibilité à extraire l'une des données suivantes pour un produit, que ce soit parce que la donnée n'existe pas, ou que l'ETL ne parvienne plus à la retrouver (ex: en cas d'évolution de la structure du HTML): Product Description, UPC, Price (incl. tax), Pricer (excl. tax), Availability, Review_rating
+- en cas d'impossibilité à extraire l'une des données suivantes pour un produit, que ce soit parce que la donnée n'existe pas, ou que l'ETL ne parvienne plus à la retrouver (ex: en cas d'évolution de la structure du HTML): product_description, universal_product_code, price_including_tax, price_excluding_tax, number_available, review_rating, image_url. Les erreurs d'extractions ou parsing correspondantes sont journalisées via le module logging.
 
-En revanche, le script est conçu pour stopper son exécution en cas d'impossibilité à atteindre la page d'accueil du site web ou bien une page de catégorie de livres du site web.
+Le script est conçu pour stopper son exécution en cas d'impossibilité à atteindre la page d'accueil du site web ou bien une page de catégorie de livres du site web.
 
-Le script affiche un décompte des lignes produits et des images exportées, pour vérification simple de sa bonne exécution.
-
-Les erreurs les plus courantes sont répertoriées dans le fichier log, ainsi que dans les fichiers CSV en ce qui concerne le téléchargement des images.
+Le script affiche un décompte des lignes produits et des images exportés, pour vérification simple de sa bonne exécution.
 
 ## Choix techniques:
 - Utilisation de BeautifullSoup pour le parsing HTML
 - Utilisation de Pillow pour la validation d'intégrité des images
 
 ## Améliorations possibles:
-- gestion des exception
+- amélioration de la gestion des exceptions (ex: 'title' manquant, 'product_card' ou 'product_absolute_url' manquants)
 - robustesse en termes de ciblage des balises HTML (en cas de modification du code HTML)
 - parallélisation des téléchargements d'images
 - ajout nécessaire de tests unitaires
 - complétion et amélioration du système de journalisation
 - intégrer des docstrings dans le script, associés à des fonctions par exemple
-- amélioration de la modularisation
+- amélioration de la modularisation (via la création de plusieurs fichiers .py pour externaliser tout ou partie des fonctions du main.py)
 
 ## Prérequis
 - Python 3.x > Python 3.7
