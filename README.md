@@ -46,9 +46,10 @@ Les erreurs les plus courantes sont répertoriées dans le fichier log, ainsi qu
 - gestion des exception
 - robustesse en termes de ciblage des balises HTML (en cas de modification du code HTML)
 - parallélisation des téléchargements d'images
-- ajout de tests unitaires
+- ajout nécessaire de tests unitaires
 - complétion et amélioration du système de journalisation
-- intégrer des docstrings dans le script, associés à des fonctions par exemple.
+- intégrer des docstrings dans le script, associés à des fonctions par exemple
+- amélioration de la modularisation
 
 ## Prérequis
 - Python 3.x > Python 3.7
