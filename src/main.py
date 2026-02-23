@@ -97,7 +97,11 @@ def extract_and_clean_rating(product_page_soup):
     review_rating = rating_mapping.get(rating_text)
 
     if review_rating == "":
-        logger.error(f"Book '{title}' : failed to extract review_rating data. Corresponding URL: {product_absolute_url}")
+        logger.error(
+            f"Book '{title}'\n" 
+            f"Error: failed to extract review_rating data\n" 
+            f"Corresponding URL: {product_absolute_url}"
+        )
         return None
     
     return review_rating
@@ -120,11 +124,20 @@ def extract_and_clean_product_description(product_page_soup):
         if description_paragraph:
             product_description = description_paragraph.get_text(strip=True)
         else:
-            logger.info(f"No available product description for this book: '{title}'. Corresponding URL: {product_absolute_url}")
+            logger.info(
+                f"Book: '{title}'\n"
+                f"Error: No available product description for this book\n" 
+                f"Corresponding URL: {product_absolute_url}"
+            )
             product_description = "No available product description for this book"
     else:
-        logger.info(f"No available product description for this book: '{title}'. Corresponding URL: {product_absolute_url}")
+        logger.info(
+            f"Book: '{title}'\n"
+            f"Error: No available product description for this book\n" 
+            f"Corresponding URL: {product_absolute_url}"
+        )
         product_description = "No available product description for this book"
+
     return product_description
 
 # Helper to extract and clean: "number_available"
@@ -137,7 +150,11 @@ def extract_and_clean_number_available(product_page_soup):
     number_available_str = "".join(digits)
 
     if number_available_str == "":
-        logger.error(f"Book '{title}': failed to extract availability data. Corresponding URL: {product_absolute_url}")
+        logger.error(
+            f"Book '{title}'\n"
+            f"Error: failed to extract availability data\n"
+            f"Corresponding URL: {product_absolute_url}"
+        )
         return None
     
     number_available = int(number_available_str)
@@ -166,14 +183,22 @@ def download_and_validate_images(universal_product_code, image_absolute_url):
                 image.load()
             image_download_status = "successful"
         except Exception:
-            logger.error(f"Book {title}: downloaded file is not a valid image. Corresponding URL: {product_absolute_url}")
+            logger.error(
+                f"Book {title}\n"
+                f"Error: downloaded file is not a valid image\n"
+                f"Corresponding URL: {product_absolute_url}"
+            )
             image_download_status = "failed"
             image_error = "Downloaded file is not a valid image"
             image_path_for_csv = "none"
             image_path.unlink(missing_ok=True)
 
     except requests.exceptions.RequestException as exception_type:
-        logger.error(f"Book {title}: download image error: {exception_type}. Corresponding URL: {product_absolute_url}")
+        logger.error(
+            f"Book {title}\n"
+            f"Error: downloaded file is not a valid image\n"
+            f"Corresponding URL: {product_absolute_url}"
+        )  
         image_download_status = "failed"  
         image_error = type(exception_type).__name__       
         image_path_for_csv = "none"
@@ -327,21 +352,33 @@ for category in category_index:
                 universal_product_code = extract_table_value(product_page_soup, "UPC", product_page_url)
                 
                 if universal_product_code is None:
-                    logger.error(f"Book '{title}': failed to extract 'UPC' data. Corresponding URL: {product_absolute_url}")
+                    logger.error(
+                        f"Book '{title}'\n"
+                        f"Error: failed to extract 'UPC' data\n"
+                        f"Corresponding URL: {product_absolute_url}"
+                    )
             
                 # Extract and normalize price (value + currency) for including and excluding tax
                 raw_price_including_tax = extract_table_value(product_page_soup, "Price (incl. tax)", product_page_url)
                 price_including_tax = parse_price(raw_price_including_tax)
 
                 if raw_price_including_tax is None:
-                    logger.error(f"Book '{title}': failed to extract 'Price (incl. tax)' data. Corresponding URL: {product_absolute_url}")
+                    logger.error(
+                        f"Book '{title}'\n"
+                        f"Error: failed to extract 'Price incl. tax' data\n"
+                        f"Corresponding URL: {product_absolute_url}"
+                    )
                     continue
 
                 raw_price_excluding_tax = extract_table_value(product_page_soup, "Price (excl. tax)", product_page_url)
                 price_excluding_tax = parse_price(raw_price_excluding_tax)
 
                 if raw_price_excluding_tax is None:
-                    logger.error(f"Book '{title}': failed to extract 'Price (excl. tax)' data. Corresponding URL: {product_absolute_url}")
+                    logger.error(
+                        f"Book '{title}'\n"
+                        f"Error: failed to extract 'Price excl. tax' data\n"
+                        f"Corresponding URL: {product_absolute_url}"
+                    )
                     continue
 
                 # Extract and clean "number_available"
