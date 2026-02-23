@@ -3,6 +3,7 @@ ETL script to extract, transform, and load data from "Books to Scrape" website.
 
 The script performs the following steps:
 1. Extract:
+    - Retrieve HTML homepage.
     - Retrieve HTML pages from all book categories.
     - Retrieve HTML pages from individual product pages.
     - Extract product data (title, price, UPC, different URLs, availability, rating, etc).
@@ -14,6 +15,7 @@ The script performs the following steps:
     - Save product data into one CSV file per category, in the output/data directory.
     - Dowload and store product images locally in the output/image directory.
     - Add a relative image path ("image_path") column to each CSV.
+    - Register and save script errors into the output/logs directory, for debug.
 
 This version of the script correspond to the Phase 4 of Openclassrooms Project number 2
 
