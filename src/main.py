@@ -31,8 +31,16 @@ from PIL import Image
 import logging
 
 # HELPERS
+# Helper to print log error message
+def log_error_message(error_message, title= None, url=None):
+    logger.error(
+        f"Book {title}\n"
+        f"Error: {error_message}\n"
+        f"Corresponding URL: {url}"
+    )
+
 # Helper to retrieve data from product information header
-def extract_table_value(product_parsed_html, label, url=""):
+def extract_table_value(product_parsed_html, label, url=None):
     header_cell = product_parsed_html.find("th", string=label)
     if header_cell is None:
         logger.error(f"Missing '{label}' in header_cell for {url}")
@@ -85,8 +93,11 @@ def parse_price(raw_price):
     return parsed_price
 
 # Helper to extract and clean: "review_rating"
-def extract_and_clean_rating(product_page_soup):
+def extract_and_clean_rating(product_page_soup, title=None, url=None):
     rating_tag = product_page_soup.find("p", class_="star-rating")
+    if rating_tag is None:
+        log_error_message("missing rating tag", title, url)
+        return None
     rating_tag_classes = rating_tag["class"]
     rating_text = rating_tag_classes[1]
     rating_mapping = {
@@ -98,27 +109,32 @@ def extract_and_clean_rating(product_page_soup):
     }
     review_rating = rating_mapping.get(rating_text)
 
-    if review_rating == "":
-        logger.error(
-            f"Book '{title}'\n" 
-            f"Error: failed to extract review_rating data\n" 
-            f"Corresponding URL: {product_absolute_url}"
-        )
+    if review_rating is None:
+        log_error_message("failed to extract review_rating_data", title, url)
         return None
     
     return review_rating
 
 # Helper to extract and clean: "image_url"
-def extract_and_clean_image_url(product_page_soup, product_page_url):
+def extract_and_clean_image_url(product_page_soup, product_page_url, title=None, url=None):
     image_container = product_page_soup.find("div", class_="item active")
+    if image_container is None:
+        log_error_message("image_container missing", title, url)
+        return None
+    
     image_tag = image_container.find("img")
+
+    if image_tag is None:
+        log_error_message("image_tag missing", title, url)
+        return None
+
     image_relative_url = image_tag["src"]
     image_absolute_url = urljoin(product_page_url, image_relative_url)
     image_url = image_absolute_url
     return image_url
 
-# Helper to extract and clean (and handle missing case): "product_description"
-def extract_and_clean_product_description(product_page_soup):
+# Helper to extract and clean: "product_description"
+def extract_and_clean_product_description(product_page_soup, title=None, url=None):
     description_container = product_page_soup.find("div", id="product_description")
 
     if description_container:
@@ -126,25 +142,20 @@ def extract_and_clean_product_description(product_page_soup):
         if description_paragraph:
             product_description = description_paragraph.get_text(strip=True)
         else:
-            logger.error(
-                f"Book: '{title}'\n"
-                f"Error: No available product description for this book\n" 
-                f"Corresponding URL: {product_absolute_url}"
-            )
+            log_error_message("no available product description for this book", title, url)
             product_description = "No available product description for this book"
     else:
-        logger.error(
-            f"Book: '{title}'\n"
-            f"Error: No available product description for this book\n" 
-            f"Corresponding URL: {product_absolute_url}"
-        )
+        log_error_message("no available product description for this book", title, url)
         product_description = "No available product description for this book"
 
     return product_description
 
 # Helper to extract and clean: "number_available"
-def extract_and_clean_number_available(product_page_soup):
+def extract_and_clean_number_available(product_page_soup, title=None, url=None):
     raw_number_available = extract_table_value(product_page_soup, "Availability")
+    if raw_number_available is None:
+        log_error_message("failed to extract availability data", title, url)
+        return None
     digits = []
     for char in raw_number_available:
         if char.isdigit():
@@ -152,18 +163,14 @@ def extract_and_clean_number_available(product_page_soup):
     number_available_str = "".join(digits)
 
     if number_available_str == "":
-        logger.error(
-            f"Book '{title}'\n"
-            f"Error: failed to extract availability data\n"
-            f"Corresponding URL: {product_absolute_url}"
-        )
+        log_error_message("failed to extract availability data", title, url)
         return None
     
     number_available = int(number_available_str)
     return number_available
 
 # Helper to download and validate image
-def download_and_validate_images(universal_product_code, image_absolute_url):
+def download_and_validate_images(universal_product_code, image_absolute_url, title=None, url=None):
     image_filename = f"{universal_product_code}.jpg"
     image_path = images_folder / image_filename
     image_error = ""
@@ -179,31 +186,25 @@ def download_and_validate_images(universal_product_code, image_absolute_url):
                 if chunk:
                     file.write(chunk)
         
-        # Validation
+        # Validation image (Pillow)
         try: 
             with Image.open(image_path) as image:
                 image.load()
             image_download_status = "successful"
+
         except Exception:
-            logger.error(
-                f"Book {title}\n"
-                f"Error: downloaded file is not a valid image\n"
-                f"Corresponding URL: {product_absolute_url}"
-            )
+            log_error_message("downloaded file is not a valid image", title, url)
             image_download_status = "failed"
             image_error = "Downloaded file is not a valid image"
             image_path_for_csv = "none"
             image_path.unlink(missing_ok=True)
 
     except requests.exceptions.RequestException as exception_type:
-        logger.error(
-            f"Book {title}\n"
-            f"Error: downloaded file is not a valid image\n"
-            f"Corresponding URL: {product_absolute_url}"
-        )  
+        log_error_message("image download failed", title, url)
         image_download_status = "failed"  
         image_error = type(exception_type).__name__       
         image_path_for_csv = "none"
+        image_path.unlink(missing_ok=True)
         
     return (
         image_error,
@@ -214,12 +215,21 @@ def download_and_validate_images(universal_product_code, image_absolute_url):
 # Helper to extract and clean categories name and url into a list of dictionnaries
 def extract_and_clean_categories(homepage_soup):
     categories_sidebar = homepage_soup.find("div", class_="side_categories")
+    if categories_sidebar is None:
+        logger.critical(f"ETL crashed: categories_sidebar is missing on homepage")
+        raise SystemExit(1)
     category_links = categories_sidebar.find_all("a")
+    if not category_links:
+        logger.critical(f"ETL crashed: category_links is missing on homepage")
+        raise SystemExit(1)
 
     category_index = []
     for link in category_links:
         name = link.get_text(strip=True)
         href = link.get("href")
+        if not href:
+            logger.critical(f"ETL crashed: Missing href for category '{name}'")
+            raise SystemExit(1)
         if name == "Books":
             continue
         category_index.append({
@@ -351,54 +361,43 @@ for category in category_index:
                 title = raw_title.replace(" | Books to Scrape - Sandbox", "")
 
                 # Extract "universal_product_code"
-                universal_product_code = extract_table_value(product_page_soup, "UPC", product_page_url)
+                universal_product_code = extract_table_value(product_page_soup, "UPC", url=product_absolute_url)
                 
                 if universal_product_code is None:
-                    logger.error(
-                        f"Book '{title}'\n"
-                        f"Error: failed to extract 'UPC' data\n"
-                        f"Corresponding URL: {product_absolute_url}"
-                    )
+                    log_error_message("failed to extract 'UPC' data", title=title, url=product_absolute_url)
+                    continue
             
                 # Extract and normalize price (value + currency) for including and excluding tax
-                raw_price_including_tax = extract_table_value(product_page_soup, "Price (incl. tax)", product_page_url)
+                raw_price_including_tax = extract_table_value(product_page_soup, "Price (incl. tax)", url=product_absolute_url)
                 price_including_tax = parse_price(raw_price_including_tax)
 
-                if raw_price_including_tax is None:
-                    logger.error(
-                        f"Book '{title}'\n"
-                        f"Error: failed to extract 'Price incl. tax' data\n"
-                        f"Corresponding URL: {product_absolute_url}"
-                    )
+                if price_including_tax is None:
+                    log_error_message("failed to parse 'Price incl. tax' data", title=title, url=product_absolute_url)
                     continue
 
-                raw_price_excluding_tax = extract_table_value(product_page_soup, "Price (excl. tax)", product_page_url)
+                raw_price_excluding_tax = extract_table_value(product_page_soup, "Price (excl. tax)", url=product_absolute_url)
                 price_excluding_tax = parse_price(raw_price_excluding_tax)
 
-                if raw_price_excluding_tax is None:
-                    logger.error(
-                        f"Book '{title}'\n"
-                        f"Error: failed to extract 'Price excl. tax' data\n"
-                        f"Corresponding URL: {product_absolute_url}"
-                    )
+                if price_excluding_tax is None:
+                    log_error_message("failed to parse 'Price excl. tax' data", title=title, url=product_absolute_url)
                     continue
 
                 # Extract and clean "number_available"
-                number_available = extract_and_clean_number_available(product_page_soup)
+                number_available = extract_and_clean_number_available(product_page_soup, title=title, url=product_absolute_url)
 
                 # Extract and clean "product_description", handling missing case
                 product_description = ""
-                product_description = extract_and_clean_product_description(product_page_soup)
+                product_description = extract_and_clean_product_description(product_page_soup, title=title, url=product_absolute_url)
 
                 # Extract and clean each "review_rating"
-                review_rating = extract_and_clean_rating(product_page_soup)
+                review_rating = extract_and_clean_rating(product_page_soup, title=title, url=product_absolute_url)
 
                 # Extract and clean "image_url" 
-                image_absolute_url = extract_and_clean_image_url(product_page_soup, product_page_url)
+                image_absolute_url = extract_and_clean_image_url(product_page_soup, product_page_url, title=title, url=product_absolute_url)
                 image_url = image_absolute_url
 
                 # Download images on local folder ouput/images, and update downloaded images counter
-                image_error, image_download_status, image_path_for_csv = download_and_validate_images(universal_product_code, image_absolute_url)
+                image_error, image_download_status, image_path_for_csv = download_and_validate_images(universal_product_code, image_absolute_url, title=title, url=product_absolute_url)
 
                 if image_download_status == "successful":
                     total_images += 1
