@@ -34,7 +34,7 @@ import logging
 # Helper to print log error message
 def log_error_message(error_message, title= None, url=None):
     logger.error(
-        f"Book {title}\n"
+        f"Book: {title}\n"
         f"Error: {error_message}\n"
         f"Corresponding URL: {url}"
     )
