@@ -37,8 +37,9 @@ Le script est conçu pour stopper son exécution en cas d'impossibilité à atte
 Le script affiche un décompte des lignes produits et des images exportés, pour vérification simple de sa bonne exécution.
 
 ## Choix techniques:
-- Utilisation de BeautifullSoup pour le parsing HTML
-- Utilisation de Pillow pour la validation d'intégrité des images
+- utilisation de BeautifullSoup pour le parsing HTML
+- utilisation de Pillow pour la validation d'intégrité des images
+- utilisation de Requests pour les requêtes HTTP
 
 ## Améliorations possibles:
 - amélioration de la gestion des exceptions (ex: 'title' manquant, 'product_card' ou 'product_absolute_url' manquants)
@@ -46,7 +47,7 @@ Le script affiche un décompte des lignes produits et des images exportés, pour
 - parallélisation des téléchargements d'images
 - ajout nécessaire de tests unitaires
 - complétion et amélioration du système de journalisation
-- intégrer des docstrings dans le script, associés à des fonctions par exemple
+- intégrer des docstrings dans le script, associés à des fonctions par exemple, pour faciliter la compréhension, la maintenance, et l'usage par des tiers.
 - amélioration de la modularisation (via la création de plusieurs fichiers .py pour externaliser tout ou partie des fonctions du main.py)
 
 ## Prérequis
