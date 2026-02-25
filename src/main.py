@@ -21,7 +21,7 @@ This version of the script correspond to the Phase 4 of Openclassrooms Project n
 
 """
 
-# THRID-PARTY LIBRARIES
+# IMPORTS
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
